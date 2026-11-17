@@ -10,6 +10,7 @@ import (
 type HNItem struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`
+	Score int    `json:"score"`
 }
 
 func FetchHackerNews(limit int) ([]model.Story, error) {
@@ -37,7 +38,8 @@ func FetchHackerNews(limit int) ([]model.Story, error) {
 			stories = append(stories, model.Story{
 				Title:  item.Title,
 				URL:    item.URL,
-				Source: "HackerNews",
+				Source: "Hacker News",
+				Points: item.Score,
 			})
 		}
 		resp.Body.Close()

@@ -1,7 +1,10 @@
 package scraper
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
+
 	"news-terminal/internal/model"
 
 	"github.com/PuerkitoBio/goquery"
@@ -25,13 +28,18 @@ func FetchLobsters(limit int) ([]model.Story, error) {
 			return
 		}
 
-		title := s.Find(".link").Text()
-		url, _ := s.Find(".link").Attr("href")
+		linkSel := s.Find("a.u-url")
+		title := strings.TrimSpace(linkSel.Text())
+		url, _ := linkSel.Attr("href")
+		pointsStr := strings.TrimSpace(s.Find(".score").Text())
+		var points int
+		fmt.Sscanf(pointsStr, "%d", &points)
 
 		stories = append(stories, model.Story{
 			Title:  title,
 			URL:    url,
 			Source: "Lobste.rs",
+			Points: points,
 		})
 	})
 

@@ -5,4 +5,5 @@ type Story struct {
 	URL    string
 	Source string
 	Recap  string
+	Points int
 }
