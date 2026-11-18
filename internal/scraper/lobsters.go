@@ -31,7 +31,13 @@ func FetchLobsters(limit int) ([]model.Story, error) {
 		linkSel := s.Find("a.u-url")
 		title := strings.TrimSpace(linkSel.Text())
 		url, _ := linkSel.Attr("href")
-		pointsStr := strings.TrimSpace(s.Find(".score").Text())
+		scoreSel := s.Find(".voters a.upvoter, .score")
+		pointsStr := strings.TrimSpace(scoreSel.Text())
+		if pointsStr == "" {
+			if titleAttr, exists := scoreSel.Attr("title"); exists {
+				pointsStr = titleAttr
+			}
+		}
 		var points int
 		fmt.Sscanf(pointsStr, "%d", &points)
 
