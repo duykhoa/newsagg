@@ -10,6 +10,7 @@ type Config struct {
 	OllamaModel    string
 	GeminiAPIKey   string
 	GeminiModel    string
+	BatchSize      int
 }
 
 func LoadConfig() (*Config, error) {
@@ -18,6 +19,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("ollama_model", "qwen3.5:4b")
 	viper.SetDefault("gemini_api_key", "")
 	viper.SetDefault("gemini_model", "gemini-3.1-flash-lite")
+	viper.SetDefault("batch_size", 25)
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -31,5 +33,6 @@ func LoadConfig() (*Config, error) {
 		OllamaModel:    viper.GetString("ollama_model"),
 		GeminiAPIKey:   viper.GetString("gemini_api_key"),
 		GeminiModel:    viper.GetString("gemini_model"),
+		BatchSize:      viper.GetInt("batch_size"),
 	}, nil
 }

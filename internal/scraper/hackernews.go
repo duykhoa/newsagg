@@ -32,7 +32,7 @@ func FetchHackerNews(limit int) ([]model.Story, error) {
 		if err != nil {
 			continue
 		}
-		
+
 		var item HNItem
 		if err := json.NewDecoder(resp.Body).Decode(&item); err == nil && item.Title != "" {
 			stories = append(stories, model.Story{

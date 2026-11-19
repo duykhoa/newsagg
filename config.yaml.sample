@@ -1,5 +1,6 @@
 # LLM provider to use: "ollama" or "gemini"
 llm_provider: "gemini"
+batch_size: 25
 
 # Ollama settings
 ollama_endpoint: "http://localhost:11434"

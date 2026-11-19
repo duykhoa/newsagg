@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"news-terminal/internal/config"
+	"news-terminal/internal/recap"
 	"news-terminal/internal/scraper"
 )
 
 func main() {
 	fmt.Println("--- Loading Config ---")
-	// cfg, err := config.LoadConfig()
-	// if err != nil {
-	// 	fmt.Println("Error loading config, using defaults:", err)
-	// }
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Println("Error loading config, using defaults:", err)
+	}
 
 	fmt.Println("--- Fetching News ---")
 
@@ -34,10 +36,10 @@ func main() {
 	allStories := append(hnStories, lbStories...)
 	allStories = append(allStories, tldrStories...)
 
-	// fmt.Println("--- Generating Recaps ---")
-	// if err := recap.GenerateSummaries(cfg.Provider, cfg.OllamaEndpoint, cfg.OllamaModel, cfg.GeminiAPIKey, cfg.GeminiModel, allStories, 3); err != nil {
-	// 	fmt.Println("Error generating summaries:", err)
-	// }
+	fmt.Println("--- Generating Recaps ---")
+	if err := recap.GenerateSummaries(cfg.Provider, cfg.OllamaEndpoint, cfg.OllamaModel, cfg.GeminiAPIKey, cfg.GeminiModel, allStories, cfg.BatchSize); err != nil {
+		fmt.Println("Error generating summaries:", err)
+	}
 
 	for i, s := range allStories {
 		fmt.Printf("[%s] (%d points) %s\n", s.Source, s.Points, s.Title)
