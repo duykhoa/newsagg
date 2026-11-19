@@ -38,10 +38,11 @@ func FetchTLDR(limit int) ([]model.Story, error) {
 		}
 
 		stories = append(stories, model.Story{
-			Title:  title,
-			URL:    url,
-			Source: "TLDR",
-			Points: 0,
+			Title:    title,
+			URL:      url,
+			StoryURL: url,
+			Source:   "TLDR",
+			Points:   0,
 		})
 	})
 

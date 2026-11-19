@@ -93,3 +93,40 @@ func (p *GeminiProvider) GenerateSummaries(stories []model.Story) ([]string, err
 
 	return nil, fmt.Errorf("failed to parse Gemini response")
 }
+
+func (p *GeminiProvider) GenerateFullContentTUI(title, url, rawContent string) (string, error) {
+	prompt := fmt.Sprintf("Clean up the following article content, stripping out ads, navigation menus, and boilerplate. Format it into a clean, TUI-friendly Markdown layout suitable for terminal viewing.\n\nTitle: %s\nURL: %s\n\nRaw Content:\n%s", title, url, rawContent)
+
+	reqBody := GeminiRequest{
+		Contents: []GeminiContent{
+			{
+				Parts: []GeminiPart{
+					{Text: prompt},
+				},
+			},
+		},
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	apiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", p.Model, p.APIKey)
+	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var geminiResp GeminiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+		return "", err
+	}
+
+	if len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
+		return strings.TrimSpace(geminiResp.Candidates[0].Content.Parts[0].Text), nil
+	}
+
+	return "", fmt.Errorf("failed to parse Gemini response for full content")
+}

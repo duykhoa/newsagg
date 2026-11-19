@@ -7,6 +7,7 @@ import (
 
 type Provider interface {
 	GenerateSummaries(stories []model.Story) ([]string, error)
+	GenerateFullContentTUI(title, url, rawContent string) (string, error)
 }
 
 func NewProvider(provider, ollamaEndpoint, ollamaModel, geminiAPIKey, geminiModel string) (Provider, error) {

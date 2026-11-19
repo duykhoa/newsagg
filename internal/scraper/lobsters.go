@@ -31,6 +31,13 @@ func FetchLobsters(limit int) ([]model.Story, error) {
 		linkSel := s.Find("a.u-url")
 		title := strings.TrimSpace(linkSel.Text())
 		url, _ := linkSel.Attr("href")
+
+		commentSel := s.Find("a.comments_url")
+		storyURL, _ := commentSel.Attr("href")
+		if storyURL != "" && !strings.HasPrefix(storyURL, "http") {
+			storyURL = "https://lobste.rs" + storyURL
+		}
+
 		scoreSel := s.Find(".voters a.upvoter, .score")
 		pointsStr := strings.TrimSpace(scoreSel.Text())
 		if pointsStr == "" {
@@ -41,11 +48,16 @@ func FetchLobsters(limit int) ([]model.Story, error) {
 		var points int
 		fmt.Sscanf(pointsStr, "%d", &points)
 
+		if storyURL == "" {
+			storyURL = url
+		}
+
 		stories = append(stories, model.Story{
-			Title:  title,
-			URL:    url,
-			Source: "Lobste.rs",
-			Points: points,
+			Title:    title,
+			URL:      url,
+			StoryURL: storyURL,
+			Source:   "Lobste.rs",
+			Points:   points,
 		})
 	})
 

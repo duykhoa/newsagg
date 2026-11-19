@@ -72,3 +72,31 @@ func (p *OllamaProvider) GenerateSummaries(stories []model.Story) ([]string, err
 
 	return summaries, nil
 }
+
+func (p *OllamaProvider) GenerateFullContentTUI(title, url, rawContent string) (string, error) {
+	prompt := fmt.Sprintf("Clean up the following article content, stripping out ads, navigation menus, and boilerplate. Format it into a clean, TUI-friendly Markdown layout suitable for terminal viewing.\n\nTitle: %s\nURL: %s\n\nRaw Content:\n%s", title, url, rawContent)
+
+	reqBody := OllamaRequest{
+		Model:  p.Model,
+		Prompt: prompt,
+		Stream: false,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.Post(p.Endpoint+"/api/generate", "application/json", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var ollamaResp OllamaResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(ollamaResp.Response), nil
+}

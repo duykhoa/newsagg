@@ -11,6 +11,7 @@ type HNItem struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`
 	Score int    `json:"score"`
+	ID    int    `json:"id"`
 }
 
 func FetchHackerNews(limit int) ([]model.Story, error) {
@@ -35,11 +36,17 @@ func FetchHackerNews(limit int) ([]model.Story, error) {
 
 		var item HNItem
 		if err := json.NewDecoder(resp.Body).Decode(&item); err == nil && item.Title != "" {
+			storyURL := fmt.Sprintf("https://news.ycombinator.com/item?id=%d", item.ID)
+			targetURL := item.URL
+			if targetURL == "" {
+				targetURL = storyURL
+			}
 			stories = append(stories, model.Story{
-				Title:  item.Title,
-				URL:    item.URL,
-				Source: "Hacker News",
-				Points: item.Score,
+				Title:    item.Title,
+				URL:      targetURL,
+				StoryURL: storyURL,
+				Source:   "Hacker News",
+				Points:   item.Score,
 			})
 		}
 		resp.Body.Close()
