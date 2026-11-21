@@ -6,49 +6,64 @@ import (
 	"time"
 
 	"news-terminal/internal/model"
-
-	_ "modernc.org/sqlite"
 )
 
+type DBTX interface {
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	PrepareContext(context.Context, string) (*sql.Stmt, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+}
+
+func New(db DBTX) *Queries {
+	return &Queries{db: db}
+}
+
+type Queries struct {
+	db DBTX
+}
+
+func (q *Queries) WithTx(tx *sql.Tx) *Queries {
+	return &Queries{
+		db: tx,
+	}
+}
+
 type DB struct {
-	conn    *sql.DB
-	Queries *Queries
+	*Queries
+	Conn *sql.DB
 }
 
-func NewDB(filepath string) (*DB, error) {
-	conn, err := sql.Open("sqlite", filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := conn.Ping(); err != nil {
-		return nil, err
-	}
-
-	database := &DB{
-		conn:    conn,
+func NewDB(conn *sql.DB) *DB {
+	return &DB{
 		Queries: New(conn),
+		Conn:    conn,
 	}
-
-	return database, nil
-}
-
-func (db *DB) Close() error {
-	return db.conn.Close()
 }
 
 func (db *DB) UpsertSource(name string, refreshInterval int) (int64, error) {
 	ctx := context.Background()
 	err := db.Queries.UpsertSource(ctx, UpsertSourceParams{
 		Name:            name,
-		RefreshInterval: int64(refreshInterval),
+		RefreshInterval: sql.NullInt64{Int64: int64(refreshInterval), Valid: true},
 	})
 	if err != nil {
 		return 0, err
 	}
+	return db.Queries.GetSourceIDByName(ctx, name)
+}
 
-	id, err := db.Queries.GetSourceIDByName(ctx, name)
-	return id, err
+func (db *DB) SaveStory(story model.Story, sourceID int64) error {
+	ctx := context.Background()
+	return db.Queries.SaveStory(ctx, SaveStoryParams{
+		SourceID:       sql.NullInt64{Int64: sourceID, Valid: true},
+		Title:          story.Title,
+		Url:            story.URL,
+		StoryUrl:       story.StoryURL,
+		Points:         sql.NullInt64{Int64: int64(story.Points), Valid: true},
+		Recap:          sql.NullString{String: story.Recap, Valid: story.Recap != ""},
+		FullContentTui: sql.NullString{String: story.FullContentTui, Valid: story.FullContentTui != ""},
+	})
 }
 
 func (db *DB) UpdateSourceRefreshTime(sourceID int64, t time.Time) error {
@@ -57,46 +72,4 @@ func (db *DB) UpdateSourceRefreshTime(sourceID int64, t time.Time) error {
 		LastRefreshedAt: sql.NullTime{Time: t, Valid: true},
 		ID:              sourceID,
 	})
-}
-
-func (db *DB) SaveStory(story model.Story, sourceID int64) error {
-	ctx := context.Background()
-	storyURL := story.StoryURL
-	if storyURL == "" {
-		storyURL = story.URL
-	}
-	return db.Queries.SaveStory(ctx, SaveStoryParams{
-		SourceID:       sql.NullInt64{Int64: sourceID, Valid: true},
-		Title:          story.Title,
-		Url:            story.URL,
-		StoryUrl:       storyURL,
-		Points:         sql.NullInt64{Int64: int64(story.Points), Valid: true},
-		Recap:          sql.NullString{String: story.Recap, Valid: story.Recap != ""},
-		FullContentTui: sql.NullString{String: story.FullContentTUI, Valid: story.FullContentTUI != ""},
-	})
-}
-
-func (db *DB) GetStoriesBySource(sourceID int64, limit, offset int) ([]model.Story, error) {
-	ctx := context.Background()
-	rows, err := db.Queries.GetStoriesBySource(ctx, GetStoriesBySourceParams{
-		SourceID: sql.NullInt64{Int64: sourceID, Valid: true},
-		Limit:    int64(limit),
-		Offset:   int64(offset),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var stories []model.Story
-	for _, row := range rows {
-		stories = append(stories, model.Story{
-			Title:          row.Title,
-			URL:            row.Url,
-			StoryURL:       row.StoryUrl,
-			Points:         int(row.Points.Int64),
-			Recap:          row.Recap.String,
-			FullContentTui: row.FullContentTui.String,
-		})
-	}
-	return stories, nil
 }

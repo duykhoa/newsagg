@@ -63,7 +63,7 @@ func (w *Worker) RunRefreshCycle() {
 		if story.URL != "" {
 			if raw, err := scraper.FetchRawContent(story.URL); err == nil {
 				if tuiContent, err := provider.GenerateFullContentTUI(story.Title, story.URL, raw); err == nil {
-					story.FullContentTUI = tuiContent
+					story.FullContentTui = tuiContent
 				}
 			}
 		}
