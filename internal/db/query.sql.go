@@ -21,6 +21,38 @@ func (q *Queries) GetSourceIDByName(ctx context.Context, name string) (int64, er
 	return id, err
 }
 
+const getSources = `-- name: GetSources :many
+SELECT id, name, last_refreshed_at, refresh_interval FROM sources
+`
+
+func (q *Queries) GetSources(ctx context.Context) ([]Source, error) {
+	rows, err := q.db.QueryContext(ctx, getSources)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Source
+	for rows.Next() {
+		var i Source
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.LastRefreshedAt,
+			&i.RefreshInterval,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStoriesBySource = `-- name: GetStoriesBySource :many
 SELECT title, url, story_url, points, recap, full_content_tui FROM stories WHERE source_id = ? ORDER BY id DESC LIMIT ? OFFSET ?
 `
@@ -68,6 +100,41 @@ func (q *Queries) GetStoriesBySource(ctx context.Context, arg GetStoriesBySource
 		return nil, err
 	}
 	return items, nil
+}
+
+const getStoryDetail = `-- name: GetStoryDetail :one
+SELECT id, source_id, title, url, story_url, points, published_at, raw_content, recap, full_content_tui FROM stories WHERE id = ?
+`
+
+type GetStoryDetailRow struct {
+	ID             int64
+	SourceID       sql.NullInt64
+	Title          string
+	Url            string
+	StoryUrl       string
+	Points         sql.NullInt64
+	PublishedAt    sql.NullTime
+	RawContent     sql.NullString
+	Recap          sql.NullString
+	FullContentTui sql.NullString
+}
+
+func (q *Queries) GetStoryDetail(ctx context.Context, id int64) (GetStoryDetailRow, error) {
+	row := q.db.QueryRowContext(ctx, getStoryDetail, id)
+	var i GetStoryDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.SourceID,
+		&i.Title,
+		&i.Url,
+		&i.StoryUrl,
+		&i.Points,
+		&i.PublishedAt,
+		&i.RawContent,
+		&i.Recap,
+		&i.FullContentTui,
+	)
+	return i, err
 }
 
 const saveStory = `-- name: SaveStory :exec

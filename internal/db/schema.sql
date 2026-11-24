@@ -1,9 +1,8 @@
 CREATE TABLE IF NOT EXISTS sources (
 	id INTEGER PRIMARY KEY,
-	name TEXT NOT NULL,
+	name TEXT NOT NULL UNIQUE,
 	last_refreshed_at DATETIME,
-	refresh_interval INTEGER DEFAULT 14400,
-	CONSTRAINT sources_name_key UNIQUE (name)
+	refresh_interval INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS stories (
@@ -11,13 +10,13 @@ CREATE TABLE IF NOT EXISTS stories (
 	source_id INTEGER,
 	title TEXT NOT NULL,
 	url TEXT NOT NULL,
-	story_url TEXT NOT NULL,
+	story_url TEXT UNIQUE NOT NULL,
 	points INTEGER,
 	published_at DATETIME,
 	raw_content TEXT,
 	recap TEXT,
 	full_content_tui TEXT,
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-	FOREIGN KEY (source_id) REFERENCES sources(id),
-	CONSTRAINT stories_story_url_key UNIQUE (story_url)
+	FOREIGN KEY (source_id) REFERENCES sources(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_stories_source_id ON stories(source_id);
